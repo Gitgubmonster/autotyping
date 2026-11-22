@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__version__ = "1.0.1"
+__version__ = "1.0.0"
 
 import time
 import random
@@ -265,6 +265,7 @@ def check_updates():
 
     remote_ver = manifest.get("version", "0.0.0")
     local_ver = globals().get("__version__", "0.0.0")
+    files_to_update = manifest.get("files", [])
 
     if remote_ver == local_ver:
         print(f"[ОБНОВЛЕНИЕ] У вас актуальная версия ({local_ver}). Обновлений нет.")
@@ -272,6 +273,7 @@ def check_updates():
         return False
 
     print(f"[ОБНОВЛЕНИЕ] Найдена новая версия: {local_ver} -> {remote_ver}")
+    print(f"[ОБНОВЛЕНИЕ] Файлы для обновления из манифеста: {', '.join(files_to_update) if files_to_update else 'нет'}")
     ans = input("Скачать и установить? (y/n): ").strip().lower()
     if ans != "y":
         print("[ОБНОВЛЕНИЕ] Обновление отменено пользователем.")
@@ -284,7 +286,7 @@ def check_updates():
 
     print("[ОБНОВЛЕНИЕ] Начинаю скачивание файлов...")
     try:
-        for fname in manifest.get("files", []):
+        for fname in files_to_update:
             if fname in protected:
                 print(f"  - {fname} (защищен, пропущен)")
                 continue
@@ -310,7 +312,9 @@ def check_updates():
         return False
 
     print(f"\n[ОБНОВЛЕНИЕ] Успешно скачано файлов: {len(downloaded)}")
-    
+    for _, dst in downloaded:
+        print(f"  + {os.path.basename(dst)}")
+
     self_path = os.path.abspath(__file__)
     self_updated = any(dst == self_path for _, dst in downloaded)
 
@@ -322,7 +326,6 @@ def check_updates():
         print("-" * 50)
         return True
 
-    # Если обновляется сам core.py
     bat_path = os.path.join(script_dir, "_update.bat")
     with open(bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")
